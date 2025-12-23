@@ -1,5 +1,5 @@
 "use client"
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { FiChevronRight, FiUsers, FiSend, FiCheckSquare, FiList } from 'react-icons/fi'
 import { SiWhatsapp } from 'react-icons/si'
 import { FiSmartphone, FiMail } from 'react-icons/fi'
@@ -43,6 +43,31 @@ const Disparo: React.FC = () => {
   function applyGroup() {
     const g = groups.find(x => x.id === selectedGroup)
     if (g) setRecipients(g.phones)
+  }
+
+  const messageRef = useRef<HTMLTextAreaElement | null>(null)
+
+  function insertPlaceholder(token: string) {
+    const el = messageRef.current
+    if (!el) {
+      setMessage(prev => prev + token)
+      return
+    }
+    const start = el.selectionStart || 0
+    const end = el.selectionEnd || 0
+    const before = message.slice(0, start)
+    const after = message.slice(end)
+    const next = before + token + after
+    setMessage(next)
+    // update cursor after insertion
+    requestAnimationFrame(() => {
+      if (messageRef.current) {
+        const pos = start + token.length
+        messageRef.current.selectionStart = pos
+        messageRef.current.selectionEnd = pos
+        messageRef.current.focus()
+      }
+    })
   }
 
   useEffect(() => {
@@ -203,7 +228,16 @@ const Disparo: React.FC = () => {
                 {templates.map(t => <option key={t.id} value={t.id}>{t.title}</option>)}
               </select>
             ) : (
-              <textarea value={message} onChange={e => setMessage(e.target.value)} rows={5} className="w-full border border-slate-200 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-100" placeholder="Escreva sua mensagem personalizada aqui" />
+              <>
+                <div className="mb-2 flex items-center gap-2">
+                  <div className="text-xs text-slate-500">Inserir variável:</div>
+                  <button type="button" onClick={() => insertPlaceholder('{{nome}}')} className="text-sm px-3 py-1 rounded-md bg-slate-50 border border-slate-100 hover:bg-slate-100">Nome</button>
+                  <button type="button" onClick={() => insertPlaceholder('{{data}}')} className="text-sm px-3 py-1 rounded-md bg-slate-50 border border-slate-100 hover:bg-slate-100">Data</button>
+                  <button type="button" onClick={() => insertPlaceholder('{{hora}}')} className="text-sm px-3 py-1 rounded-md bg-slate-50 border border-slate-100 hover:bg-slate-100">Hora</button>
+                </div>
+
+                <textarea ref={messageRef} value={message} onChange={e => setMessage(e.target.value)} rows={5} className="w-full border border-slate-200 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-100" placeholder="Escreva sua mensagem personalizada aqui" />
+              </>
             )}
 
           </section>
@@ -234,7 +268,19 @@ const Disparo: React.FC = () => {
               <h4 className="font-semibold text-slate-800">Preview da Mensagem</h4>
               <div className="text-xs text-slate-400">Canal • {channel === 'whatsapp' ? 'WhatsApp' : channel === 'sms' ? 'SMS' : 'E-mail'}</div>
             </div>
-            <div className="h-48 border border-slate-100 rounded-md p-4 bg-slate-50 text-sm text-slate-600">{message || 'Selecione um template ou escreva uma mensagem'}</div>
+            <div className="h-48 border border-slate-100 rounded-md p-4 bg-slate-50 text-sm text-slate-600 overflow-auto">
+              {message ? (
+                message.split(/({{\s*[^}]+\s*}})/g).map((part, i) => {
+                  if (/^{{\s*[^}]+\s*}}$/.test(part)) {
+                    const key = part.replace(/{{\s*|\s*}}/g, '')
+                    return <span key={i} className="text-sky-600 font-medium">{`{{${key}}}`}</span>
+                  }
+                  return <span key={i}>{part}</span>
+                })
+              ) : (
+                'Selecione um template ou escreva uma mensagem'
+              )}
+            </div>
 
             <div className="mt-4 bg-white border border-slate-100 rounded-md p-3 text-sm text-slate-700">
               <div className="flex items-center justify-between">

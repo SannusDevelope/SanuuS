@@ -10,6 +10,7 @@ export default function Sidebar() {
   const pathname = usePathname() || '/'
   const [openGroup, setOpenGroup] = useState<'crm' | null>('crm')
   const [campaignOpen, setCampaignOpen] = useState<boolean>(true)
+  const [contactOpen, setContactOpen] = useState<boolean>(false)
 
   function go(path: string) {
     router.push(path)
@@ -88,6 +89,34 @@ export default function Sidebar() {
                 </button>
               </div>
             )}
+
+            <div className="mt-3">
+              <button
+                onClick={() => setContactOpen(prev => !prev)}
+                className={`w-full text-left flex items-center justify-between gap-3 rounded-md px-3 py-2 transition-colors ${contactOpen ? 'bg-slate-700 text-white' : 'hover:bg-slate-700'}`}>
+                <div className="flex items-center gap-3">
+                  <FiUsers />
+                  <span>Contato</span>
+                </div>
+                <FiChevronRight className={`${contactOpen ? 'rotate-90' : ''} transition-transform`} />
+              </button>
+
+              {contactOpen && (
+                <div className="mt-2 ml-4 flex flex-col gap-1">
+                  <button onClick={() => go('/contatos')} className={`text-sm text-left px-2 py-1 rounded ${active('/contatos') ? 'bg-slate-700' : 'hover:bg-slate-700'}`}>
+                    Lista de Contatos
+                  </button>
+
+                  <button onClick={() => go('/contatos/importar')} className={`text-sm text-left px-2 py-1 rounded ${active('/contatos/importar') ? 'bg-slate-700' : 'hover:bg-slate-700'}`}>
+                    Importar
+                  </button>
+
+                  <button onClick={() => go('/contatos/exportar')} className={`text-sm text-left px-2 py-1 rounded ${active('/contatos/exportar') ? 'bg-slate-700' : 'hover:bg-slate-700'}`}>
+                    Exportar
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="mt-6 text-xs text-slate-500">Versão CRM • Módulo Mensagens</div>

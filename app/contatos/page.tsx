@@ -7,16 +7,15 @@ type Contact = {
   id: string
   name: string
   company?: string
-  responsible?: string
-  messenger?: string
+  phone?: string
   created?: string
   modified?: string
 }
 
 const sample: Contact[] = [
-  { id: '1', name: 'Marcos Souza', company: 'Acme Ltda', responsible: 'Ana Laura Lima', messenger: 'WhatsApp', created: 'hoje', modified: 'hoje' },
-  { id: '2', name: 'Pedro Castro', company: 'Beta SA', responsible: 'Ana Laura Lima', messenger: 'Messenger', created: '12/07/2025', modified: '12/07/2025' },
-  { id: '3', name: 'Marcos Martins', company: 'Gamma LTDA', responsible: 'Sebastião Reis', messenger: 'WhatsApp', created: '10/07/2025', modified: '10/07/2025' }
+  { id: '1', name: 'Marcos Souza', company: 'Acme Ltda', phone: '+55 11 99999-1234', created: 'hoje', modified: 'hoje' },
+  { id: '2', name: 'Pedro Castro', company: 'Beta SA', phone: '+55 11 99999-0001', created: '12/07/2025', modified: '12/07/2025' },
+  { id: '3', name: 'Marcos Martins', company: 'Gamma LTDA', phone: '+55 21 97777-9012', created: '10/07/2025', modified: '10/07/2025' }
 ]
 
 export default function ContatosPage() {
@@ -27,6 +26,8 @@ export default function ContatosPage() {
   const [editOpen, setEditOpen] = useState(false)
   const [editing, setEditing] = useState<Contact | null>(null)
   const [openNew, setOpenNew] = useState(false)
+  const [groupModalOpen, setGroupModalOpen] = useState(false)
+  const [groupName, setGroupName] = useState('')
 
   const menuRefs = useRef<Record<string, HTMLDivElement | null>>({})
 
@@ -56,6 +57,26 @@ export default function ContatosPage() {
 
   function toggleSelect(id: string) {
     setSelected(prev => ({ ...prev, [id]: !prev[id] }))
+  }
+
+  const selectedCount = Object.values(selected).filter(Boolean).length
+
+  function createGroupFromSelection(e: React.FormEvent) {
+    e.preventDefault()
+    const members = Object.keys(selected).filter(id => selected[id])
+    if (members.length < 2) {
+      alert('Selecione ao menos 2 contatos para criar um grupo')
+      return
+    }
+    const groups = JSON.parse(localStorage.getItem('contactGroups') || '[]')
+    const g = { id: String(Date.now()), name: groupName || `Grupo ${groups.length + 1}`, members }
+    groups.push(g)
+    localStorage.setItem('contactGroups', JSON.stringify(groups))
+    setGroupModalOpen(false)
+    setGroupName('')
+    // clear selection
+    setSelected({})
+    alert('Grupo criado com sucesso')
   }
 
   function deleteContact(id: string) {
@@ -103,7 +124,13 @@ export default function ContatosPage() {
             <input placeholder="Buscar contatos..." value={query} onChange={e => setQuery(e.target.value)} className="outline-none text-sm bg-transparent w-full placeholder:text-slate-400" />
           </div>
 
-          <button onClick={() => setOpenNew(true)} className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white px-4 py-2 rounded-lg shadow-md">Novo Contato</button>
+          <div className="flex items-center gap-2">
+            {selectedCount >= 2 && (
+              <button onClick={() => setGroupModalOpen(true)} className="inline-flex items-center gap-2 bg-indigo-600 text-white px-3 py-2 rounded-md shadow-sm">Criar Grupo ({selectedCount})</button>
+            )}
+
+            <button onClick={() => setOpenNew(true)} className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white px-4 py-2 rounded-lg shadow-md">Novo Contato</button>
+          </div>
         </div>
       </header>
 
@@ -111,11 +138,10 @@ export default function ContatosPage() {
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-xs text-slate-500">
-              <th className="py-3"><input type="checkbox" onChange={toggleSelectAll} checked={filtered.length>0 && filtered.every(c=>selected[c.id])} /></th>
+              <th className="py-3" />
               <th>Contato</th>
               <th className="text-center">Empresa</th>
-              <th className="text-center">Responsável</th>
-              <th className="text-center">Messenger</th>
+              <th className="text-center">Telefone</th>
               <th className="text-right">Criado</th>
               <th className="text-right">Modificado</th>
               <th />
@@ -124,13 +150,19 @@ export default function ContatosPage() {
           <tbody>
             {filtered.map(c => (
               <tr key={c.id} className="border-t border-slate-100 hover:bg-slate-50">
-                <td className="py-4 align-middle"><input type="checkbox" checked={!!selected[c.id]} onChange={() => toggleSelect(c.id)} /></td>
+                <td className="py-4 align-middle">
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" checked={!!selected[c.id]} onChange={() => toggleSelect(c.id)} className="w-4 h-4" />
+                    <button onClick={() => toggleSelect(c.id)} className={`w-9 h-9 rounded-full flex items-center justify-center ${selected[c.id] ? 'ring-2 ring-emerald-500 bg-white' : 'bg-slate-100'}`}>
+                      <span className="text-sm font-medium text-slate-700">{c.name.split(' ').map(n=>n[0]).slice(0,2).join('').toUpperCase()}</span>
+                    </button>
+                  </div>
+                </td>
                 <td className="py-4 align-middle">
                   <div className="font-medium">{c.name}</div>
                 </td>
                 <td className="text-center align-middle">{c.company || '-'}</td>
-                <td className="text-center align-middle">{c.responsible || '-'}</td>
-                <td className="text-center align-middle">{c.messenger || '-'}</td>
+                <td className="text-center align-middle">{c.phone || '-'}</td>
                 <td className="text-right align-middle">{c.created || '-'}</td>
                 <td className="text-right align-middle">{c.modified || '-'}</td>
                 <td className="text-right align-middle relative">
@@ -164,6 +196,10 @@ export default function ContatosPage() {
               <label className="text-xs text-slate-600">Empresa</label>
               <input name="company" className="w-full border rounded px-2 py-1 mt-1" />
             </div>
+            <div>
+              <label className="text-xs text-slate-600">Telefone</label>
+              <input name="phone" className="w-full border rounded px-2 py-1 mt-1" />
+            </div>
             <div className="text-right">
               <button type="submit" className="bg-emerald-500 text-white px-4 py-1 rounded">Criar</button>
             </div>
@@ -182,8 +218,27 @@ export default function ContatosPage() {
               <label className="text-xs text-slate-600">Empresa</label>
               <input value={editing.company} onChange={e => setEditing(prev => prev ? { ...prev, company: e.target.value } : prev)} className="w-full border rounded px-2 py-1 mt-1" />
             </div>
+            <div>
+              <label className="text-xs text-slate-600">Telefone</label>
+              <input value={editing.phone} onChange={e => setEditing(prev => prev ? { ...prev, phone: e.target.value } : prev)} className="w-full border rounded px-2 py-1 mt-1" />
+            </div>
             <div className="text-right">
               <button type="submit" className="bg-emerald-500 text-white px-4 py-1 rounded">Salvar</button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {groupModalOpen && (
+        <Modal title="Criar Grupo" onClose={() => setGroupModalOpen(false)}>
+          <form onSubmit={createGroupFromSelection} className="space-y-3">
+            <div>
+              <label className="text-xs text-slate-600">Nome do grupo</label>
+              <input value={groupName} onChange={e => setGroupName(e.target.value)} className="w-full border rounded px-2 py-1 mt-1" />
+              <div className="text-xs text-slate-400 mt-1">Membros selecionados: {selectedCount}</div>
+            </div>
+            <div className="text-right">
+              <button type="submit" className="bg-indigo-600 text-white px-4 py-1 rounded">Criar Grupo</button>
             </div>
           </form>
         </Modal>

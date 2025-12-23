@@ -1,5 +1,67 @@
 "use client"
 import React from 'react'
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler,
+} from 'chart.js'
+import { Line } from 'react-chartjs-2'
+
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler)
+
+const labels = (() => {
+  const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
+  const today = new Date()
+  return Array.from({ length: 7 }).map((_, i) => {
+    const d = new Date(today)
+    d.setDate(today.getDate() - (6 - i))
+    return days[d.getDay()]
+  })
+})()
+
+const data = {
+  labels,
+  datasets: [
+    {
+      label: 'Enviadas',
+      data: [120, 200, 150, 180, 220, 170, 240],
+      borderColor: '#10b981',
+      backgroundColor: 'rgba(16,185,129,0.12)',
+      tension: 0.35,
+      fill: true,
+      pointRadius: 3,
+    },
+    {
+      label: 'Entregue',
+      data: [100, 180, 130, 160, 200, 150, 210],
+      borderColor: '#94a3b8',
+      backgroundColor: 'rgba(148,163,184,0.06)',
+      tension: 0.35,
+      fill: true,
+      pointRadius: 2,
+    },
+  ],
+}
+
+const options = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: { position: 'top' as const, labels: { color: '#475569' } },
+    title: { display: false },
+    tooltip: { mode: 'index' as const, intersect: false },
+  },
+  scales: {
+    x: { grid: { display: false }, ticks: { color: '#94a3b8' } },
+    y: { grid: { color: 'rgba(15,23,42,0.04)' }, ticks: { color: '#94a3b8' }, beginAtZero: true },
+  },
+}
 
 const ChartCard: React.FC = () => {
   return (
@@ -12,16 +74,7 @@ const ChartCard: React.FC = () => {
       </div>
 
       <div className="h-44">
-        <svg viewBox="0 0 600 200" className="w-full h-full">
-          <defs>
-            <linearGradient id="g" x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0%" stopColor="#34d399" stopOpacity="0.3" />
-              <stop offset="100%" stopColor="#34d399" stopOpacity="0" />
-            </linearGradient>
-          </defs>
-          <path d="M0,120 C80,90 160,140 240,110 C320,80 400,40 480,60 C560,80 600,60 600,60 L600,200 L0,200 Z" fill="url(#g)" />
-          <path d="M0,130 C80,100 160,150 240,120 C320,90 400,50 480,70 C560,90 600,70" stroke="#10b981" strokeWidth="3" fill="none" strokeLinecap="round" />
-        </svg>
+        <Line data={data} options={options} />
       </div>
 
       <div className="mt-4 text-sm text-slate-500 flex gap-4">

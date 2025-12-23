@@ -1,5 +1,5 @@
 "use client"
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { FiChevronRight, FiUsers, FiSend, FiCheckSquare, FiList } from 'react-icons/fi'
 import { SiWhatsapp } from 'react-icons/si'
 import { FiSmartphone, FiMail } from 'react-icons/fi'
@@ -9,6 +9,7 @@ const Disparo: React.FC = () => {
   const [recipients, setRecipients] = useState<string[]>(['+55 11 99999-1234'])
   const [template, setTemplate] = useState('')
   const [message, setMessage] = useState('')
+  const [messageMode, setMessageMode] = useState<'template' | 'custom'>('template')
   const [schedule, setSchedule] = useState(false)
   const [date, setDate] = useState('')
   const [time, setTime] = useState('')
@@ -20,6 +21,11 @@ const Disparo: React.FC = () => {
   ]
 
   const [selectedGroup, setSelectedGroup] = useState<string | null>(groups[0].id)
+
+  const templates = [
+    { id: 'confirm', title: 'Confirmação de agendamento', content: 'Olá {{nome}}, seu agendamento foi confirmado para {{data}} às {{hora}}.' },
+    { id: 'reminder', title: 'Lembrete de pagamento', content: 'Olá {{nome}}, lembramos que seu pagamento vence em {{data}}. Confira os detalhes.' }
+  ]
 
   function toggleRecipient(phone: string) {
     setRecipients(prev => prev.includes(phone) ? prev.filter(p => p !== phone) : [...prev, phone])
@@ -38,6 +44,14 @@ const Disparo: React.FC = () => {
     const g = groups.find(x => x.id === selectedGroup)
     if (g) setRecipients(g.phones)
   }
+
+  useEffect(() => {
+    if (messageMode === 'template') {
+      const t = templates.find(t => t.id === template)
+      if (t) setMessage(t.content)
+    }
+    // when switching to custom we keep whatever message the user had
+  }, [messageMode, template])
 
   return (
     <div className="p-8">
@@ -172,11 +186,25 @@ const Disparo: React.FC = () => {
               <h4 className="font-semibold text-slate-800">Template da Mensagem</h4>
             </div>
 
-            <select value={template} onChange={(e) => setTemplate(e.target.value)} className="w-full border border-slate-200 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-100">
-              <option value="">Selecione um template ou escreva</option>
-              <option value="confirm">Confirmação de agendamento</option>
-              <option value="reminder">Lembrete de pagamento</option>
-            </select>
+            <div className="flex items-center gap-3 mb-3">
+              <label className={`flex items-center gap-2 px-3 py-1 rounded-md cursor-pointer ${messageMode === 'template' ? 'bg-emerald-50 border border-emerald-100' : 'hover:bg-slate-50'}`}>
+                <input type="radio" name="messageMode" checked={messageMode === 'template'} onChange={() => setMessageMode('template')} className="hidden" />
+                <span className="text-sm">Usar template</span>
+              </label>
+              <label className={`flex items-center gap-2 px-3 py-1 rounded-md cursor-pointer ${messageMode === 'custom' ? 'bg-emerald-50 border border-emerald-100' : 'hover:bg-slate-50'}`}>
+                <input type="radio" name="messageMode" checked={messageMode === 'custom'} onChange={() => setMessageMode('custom')} className="hidden" />
+                <span className="text-sm">Mensagem personalizada</span>
+              </label>
+            </div>
+
+            {messageMode === 'template' ? (
+              <select value={template} onChange={(e) => setTemplate(e.target.value)} className="w-full border border-slate-200 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-100">
+                <option value="">Selecione um template</option>
+                {templates.map(t => <option key={t.id} value={t.id}>{t.title}</option>)}
+              </select>
+            ) : (
+              <textarea value={message} onChange={e => setMessage(e.target.value)} rows={5} className="w-full border border-slate-200 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-100" placeholder="Escreva sua mensagem personalizada aqui" />
+            )}
 
           </section>
 

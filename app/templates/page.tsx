@@ -85,9 +85,9 @@ const Templates: React.FC = () => {
 
         <div className="flex items-center gap-4">
           <div className="px-4 py-3 flex items-center gap-3">
-            <div className="flex items-center gap-2 bg-slate-50 rounded-md bg-white px-3 py-2 w-96">
-              <FiFileText className="text-slate-400" />
-              <input placeholder="Buscar templates..." value={query} onChange={e => setQuery(e.target.value)} className="outline-none text-sm bg-transparent w-full" />
+            <div className="flex items-center bg-white border border-slate-100 rounded-full shadow-sm px-3 py-2 w-96 transition focus-within:ring-2 focus-within:ring-emerald-200">
+              <FiFileText className="text-slate-400 mr-2" />
+              <input placeholder="Buscar templates..." value={query} onChange={e => setQuery(e.target.value)} className="outline-none text-sm bg-transparent w-full placeholder:text-slate-400" />
             </div>
           </div>
 

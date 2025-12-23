@@ -1,7 +1,7 @@
 "use client"
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import Modal from '../../components/Modal'
-import { FiPlus, FiSearch, FiMoreVertical } from 'react-icons/fi'
+import { FiPlus, FiSearch, FiMoreVertical, FiEdit2, FiTrash2 } from 'react-icons/fi'
 
 type Campaign = {
   id: string
@@ -25,6 +25,13 @@ const Campanhas: React.FC = () => {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('Todos')
+  const [menuOpenId, setMenuOpenId] = useState<string | null>(null)
+
+  const menuRefs = useRef<Record<string, HTMLDivElement | null>>({})
+
+  // edit modal state
+  const [editOpen, setEditOpen] = useState(false)
+  const [editing, setEditing] = useState<Campaign | null>(null)
 
   // form state for new campaign
   const [name, setName] = useState('')
@@ -51,7 +58,48 @@ const Campanhas: React.FC = () => {
     setEnd('')
   }
 
+  function deleteCampaign(id: string) {
+    if (!confirm('Tem certeza que deseja deletar esta campanha?')) return
+    setCampaigns(prev => prev.filter(c => c.id !== id))
+    setMenuOpenId(null)
+  }
+
+  function openEdit(c: Campaign) {
+    setEditing(c)
+    setEditOpen(true)
+    setMenuOpenId(null)
+  }
+
+  function updateCampaign(e: React.FormEvent) {
+    e.preventDefault()
+    if (!editing) return
+    setCampaigns(prev => prev.map(c => c.id === editing.id ? editing : c))
+    setEditOpen(false)
+    setEditing(null)
+  }
+
   const filtered = campaigns.filter(c => (statusFilter === 'Todos' || c.status === statusFilter) && (c.name.toLowerCase().includes(query.toLowerCase())))
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (!menuOpenId) return
+      const el = menuRefs.current[menuOpenId]
+      if (el && !el.contains(e.target as Node)) {
+        setMenuOpenId(null)
+      }
+    }
+
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setMenuOpenId(null)
+    }
+
+    document.addEventListener('click', handleClickOutside)
+    document.addEventListener('keydown', handleKey)
+    return () => {
+      document.removeEventListener('click', handleClickOutside)
+      document.removeEventListener('keydown', handleKey)
+    }
+  }, [menuOpenId])
 
   return (
     <div className="p-8">
@@ -62,20 +110,25 @@ const Campanhas: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-4">
-          <div className="px-4 py-3 flex items-center gap-3">
-            <div className="flex items-center gap-2 bg-slate-50 rounded-md px-3 py-2 w-80 bg-white">
-              <FiSearch className="text-slate-400" />
-              <input placeholder="Buscar campanhas..." value={query} onChange={e => setQuery(e.target.value)} className="outline-none text-sm bg-transparent w-full" />
-            </div>
+          <div className="px-4 py-3 flex items-center gap-4">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center bg-white border border-slate-100 rounded-full shadow-sm px-3 py-2 w-96 transition focus-within:ring-2 focus-within:ring-emerald-200">
+                <FiSearch className="text-slate-400 mr-2" />
+                <input placeholder="Buscar campanhas..." value={query} onChange={e => setQuery(e.target.value)} className="outline-none text-sm bg-transparent w-full placeholder:text-slate-400" />
+              </div>
 
-            <div className="bg-slate-50 rounded-md px-3 py-2 bg-white">
-              <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="text-sm outline-none bg-transparent">
-                <option>Todos</option>
-                <option>Ativa</option>
-                <option>Concluída</option>
-                <option>Agendada</option>
-                <option>Rascunho</option>
-              </select>
+              <div className="relative">
+                <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="appearance-none bg-white border border-slate-100 rounded-full px-4 py-2 text-sm pr-8 focus:outline-none focus:ring-2 focus:ring-emerald-200">
+                  <option>Todos</option>
+                  <option>Ativa</option>
+                  <option>Concluída</option>
+                  <option>Agendada</option>
+                  <option>Rascunho</option>
+                </select>
+                <svg className="pointer-events-none absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
             </div>
           </div>
 
@@ -113,10 +166,28 @@ const Campanhas: React.FC = () => {
                   <td className="text-right align-middle text-slate-700">{c.recipients.toLocaleString()}</td>
                   <td className="text-right align-middle">{c.delivery ? <span className="text-emerald-600 font-medium">{c.delivery}</span> : '-'}</td>
                   <td className="text-right align-middle">{c.openRate ? <span className="text-sky-600 font-medium">{c.openRate}</span> : '-'}</td>
-                  <td className="text-right align-middle">
-                    <button className="text-slate-400 hover:text-slate-600 p-2 rounded-full">
+                  <td className="text-right align-middle relative">
+                    <button onClick={() => setMenuOpenId(menuOpenId === c.id ? null : c.id)} className="text-slate-400 hover:text-slate-600 p-2 rounded-full">
                       <FiMoreVertical />
                     </button>
+
+                    {menuOpenId === c.id && (
+                      <div ref={el => (menuRefs.current[c.id] = el)} className="absolute right-0 mt-2 w-44 z-50">
+                        <div className="bg-white rounded-lg shadow-lg ring-1 ring-slate-200 overflow-hidden transition">
+                          <div className="py-1">
+                            <button onClick={() => openEdit(c)} className="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center gap-3 text-sm text-slate-700 focus:outline-none">
+                              <FiEdit2 className="text-slate-500" />
+                              <span>Editar</span>
+                            </button>
+
+                            <button onClick={() => deleteCampaign(c.id)} className="w-full text-left px-4 py-2 hover:bg-rose-50 flex items-center gap-3 text-sm text-rose-600 focus:outline-none">
+                              <FiTrash2 className="text-rose-600" />
+                              <span>Excluir</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -153,6 +224,45 @@ const Campanhas: React.FC = () => {
 
             <div className="text-right">
               <button type="submit" className="bg-emerald-500 text-white px-4 py-1 rounded">Criar campanha</button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {editOpen && editing && (
+        <Modal title="Editar Campanha" onClose={() => { setEditOpen(false); setEditing(null) }}>
+          <form onSubmit={updateCampaign} className="space-y-3">
+            <div>
+              <label className="text-xs text-slate-600">Nome da campanha</label>
+              <input required value={editing.name} onChange={e => setEditing(prev => prev ? { ...prev, name: e.target.value } : prev)} className="w-full border rounded px-2 py-1 mt-1" />
+            </div>
+
+            <div>
+              <label className="text-xs text-slate-600">Canal</label>
+              <select value={editing.channel} onChange={e => setEditing(prev => prev ? { ...prev, channel: e.target.value } : prev)} className="w-full border rounded px-2 py-1 mt-1">
+                <option>WhatsApp</option>
+                <option>SMS</option>
+                <option>E-mail</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="text-xs text-slate-600">Status</label>
+              <select value={editing.status} onChange={e => setEditing(prev => prev ? { ...prev, status: e.target.value } : prev)} className="w-full border rounded px-2 py-1 mt-1">
+                <option>Ativa</option>
+                <option>Concluída</option>
+                <option>Agendada</option>
+                <option>Rascunho</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="text-xs text-slate-600">Destinatários</label>
+              <input type="number" value={editing.recipients} onChange={e => setEditing(prev => prev ? { ...prev, recipients: Number(e.target.value) } : prev)} className="w-full border rounded px-2 py-1 mt-1" />
+            </div>
+
+            <div className="text-right">
+              <button type="submit" className="bg-emerald-500 text-white px-4 py-1 rounded">Salvar</button>
             </div>
           </form>
         </Modal>

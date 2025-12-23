@@ -7,15 +7,16 @@ type Contact = {
   id: string
   name: string
   company?: string
+  email?: string
   phone?: string
   created?: string
   modified?: string
 }
 
 const sample: Contact[] = [
-  { id: '1', name: 'Marcos Souza', company: 'Acme Ltda', phone: '+55 11 99999-1234', created: 'hoje', modified: 'hoje' },
-  { id: '2', name: 'Pedro Castro', company: 'Beta SA', phone: '+55 11 99999-0001', created: '12/07/2025', modified: '12/07/2025' },
-  { id: '3', name: 'Marcos Martins', company: 'Gamma LTDA', phone: '+55 21 97777-9012', created: '10/07/2025', modified: '10/07/2025' }
+  { id: '1', name: 'Marcos Souza', company: 'Acme Ltda', email: 'marcos@acme.com', phone: '+55 11 99999-1234', created: 'hoje', modified: 'hoje' },
+  { id: '2', name: 'Pedro Castro', company: 'Beta SA', email: 'pedro@beta.com', phone: '+55 11 99999-0001', created: '12/07/2025', modified: '12/07/2025' },
+  { id: '3', name: 'Marcos Martins', company: 'Gamma LTDA', email: 'mmartins@gamma.com', phone: '+55 21 97777-9012', created: '10/07/2025', modified: '10/07/2025' }
 ]
 
 export default function ContatosPage() {
@@ -46,7 +47,7 @@ export default function ContatosPage() {
     }
   }, [menuOpenId])
 
-  const filtered = contacts.filter(c => c.name.toLowerCase().includes(query.toLowerCase()) || (c.company || '').toLowerCase().includes(query.toLowerCase()))
+  const filtered = contacts.filter(c => c.name.toLowerCase().includes(query.toLowerCase()) || (c.company || '').toLowerCase().includes(query.toLowerCase()) || (c.email || '').toLowerCase().includes(query.toLowerCase()))
 
   function toggleSelectAll() {
     const all = filtered.every(c => selected[c.id])
@@ -141,6 +142,7 @@ export default function ContatosPage() {
               <th className="py-3" />
               <th>Contato</th>
               <th className="text-center">Empresa</th>
+              <th className="text-center">Email</th>
               <th className="text-center">Telefone</th>
               <th className="text-right">Criado</th>
               <th className="text-right">Modificado</th>
@@ -162,6 +164,7 @@ export default function ContatosPage() {
                   <div className="font-medium">{c.name}</div>
                 </td>
                 <td className="text-center align-middle">{c.company || '-'}</td>
+                <td className="text-center align-middle">{c.email || '-'}</td>
                 <td className="text-center align-middle">{c.phone || '-'}</td>
                 <td className="text-right align-middle">{c.created || '-'}</td>
                 <td className="text-right align-middle">{c.modified || '-'}</td>
@@ -187,7 +190,7 @@ export default function ContatosPage() {
 
       {openNew && (
         <Modal title="Novo Contato" onClose={() => setOpenNew(false)}>
-          <form onSubmit={createContact} className="space-y-3">
+            <form onSubmit={createContact} className="space-y-3">
             <div>
               <label className="text-xs text-slate-600">Nome</label>
               <input name="name" required className="w-full border rounded px-2 py-1 mt-1" />
@@ -199,6 +202,10 @@ export default function ContatosPage() {
             <div>
               <label className="text-xs text-slate-600">Telefone</label>
               <input name="phone" className="w-full border rounded px-2 py-1 mt-1" />
+            </div>
+            <div>
+              <label className="text-xs text-slate-600">Email</label>
+              <input name="email" type="email" className="w-full border rounded px-2 py-1 mt-1" />
             </div>
             <div className="text-right">
               <button type="submit" className="bg-emerald-500 text-white px-4 py-1 rounded">Criar</button>
@@ -222,6 +229,10 @@ export default function ContatosPage() {
               <label className="text-xs text-slate-600">Telefone</label>
               <input value={editing.phone} onChange={e => setEditing(prev => prev ? { ...prev, phone: e.target.value } : prev)} className="w-full border rounded px-2 py-1 mt-1" />
             </div>
+              <div>
+                <label className="text-xs text-slate-600">Email</label>
+                <input value={editing.email} onChange={e => setEditing(prev => prev ? { ...prev, email: e.target.value } : prev)} className="w-full border rounded px-2 py-1 mt-1" />
+              </div>
             <div className="text-right">
               <button type="submit" className="bg-emerald-500 text-white px-4 py-1 rounded">Salvar</button>
             </div>

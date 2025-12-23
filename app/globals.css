@@ -1,8 +1,11 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Palette based on sannus-logo */
+  --brand: #0b2545; /* dark navy */
+  --accent: #10b981; /* emerald */
+  --background: #f8fafc; /* very light */
+  --foreground: #0b1724; /* almost black-blue */
 }
 
 @theme inline {
@@ -24,3 +27,9 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Utilities referencing the brand variables */
+.bg-brand { background-color: var(--brand) !important; }
+.text-brand { color: var(--brand) !important; }
+.bg-accent { background-color: var(--accent) !important; }
+.text-accent { color: var(--accent) !important; }
